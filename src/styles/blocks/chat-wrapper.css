@@ -27,6 +27,7 @@
 @media (min-width: 340px) and (max-width: 450px) {
   .chat-wrapper{
     font-size: 12px;
+    height: calc(100vh - 220px);
   }
   .chat-wrapper::-webkit-scrollbar {
   background: transparent;
