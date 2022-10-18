@@ -136,6 +136,8 @@ class Chat extends React.Component {
   render() {
     const messages = this.state.messages;
 
+    let handler = this.debounce(this.handleClick.bind(this));
+
     return (
       <div className="chat-wrapper">
         {messages.map((m, index) => (
@@ -145,9 +147,7 @@ class Chat extends React.Component {
             position={m.sender}
             options={m.options}
             link={m.link}
-            onClick={(e, link, index) => {
-              this.handleClick(e, link, index);
-            }}
+            onClick={handler}
           />
         ))}
       </div>
@@ -248,7 +248,14 @@ class Chat extends React.Component {
               )
             );
           } else {
-            messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+            messages.push(
+              new MessageObject(
+                "Данная ветка пока в разработке",
+                "bot _red",
+                true,
+                [["Далее", "continue"]]
+              )
+            );
           }
         }
       } else {
@@ -332,6 +339,19 @@ class Chat extends React.Component {
     }
   }
 
+  debounce(func) {
+    let callFlag = true;
+    return function (...args) {
+      if (!callFlag) {
+        return;
+      }
+      func(...args);
+      callFlag = false;
+      setTimeout(() => {
+        callFlag = true;
+      }, 3000);
+    };
+  }
   /**
    * Обработчик события клика (используется при клике на опции(варианты ответов/вопросов, которые предлагает чат-бот))
    * @method
