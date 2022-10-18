@@ -264,7 +264,6 @@ class Chat extends React.Component {
   }
 
   async fetchQuestions(messages, next) {
-    console.log("handle");
     let newQuestion = { text: "Извините, сервер временно недоступен" };
     try {
       if (next.answer) {
