@@ -169,8 +169,14 @@ app.get("/documents/next", async function(request,response){
       );
 
       const documents = database.collection("documents");
-      let link = ((await documents.find({ code: userDocument }).toArray())[0]).link;
+      // let link = ((await documents.find({ code: userDocument }).toArray())[0]).link; - потом вернуть
+      let doc = await documents.find({ code: userDocument }).toArray();
+      if(doc.length === 0){
+          response.send(JSON.stringify({text:'', link: null}));
+      } else {
+      let link = doc[0].link;
       response.send(JSON.stringify({text:'', link: link}));
+      }
 
     } else {
 
