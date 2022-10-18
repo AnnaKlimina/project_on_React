@@ -5,7 +5,7 @@ import "./styles/index.css";
 import logo from "./img/logo.png";
 import botIcon from "./img/bot.png";
 
-const serverLink = "http://localhost:8080";
+const serverLink = "https://sam-zam-server.herokuapp.com";
 
 const standart = new Set([
   "Назад",
@@ -204,9 +204,7 @@ class Chat extends React.Component {
       }
     } catch (e) {
       console.log(e);
-      messages.push(
-        new MessageObject("Нет подключения к серверу  _red", "bot")
-      );
+      messages.push(new MessageObject("Нет подключения к серверу", "bot _red"));
       messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
     }
   }
@@ -246,7 +244,7 @@ class Chat extends React.Component {
                 "bot _green",
                 true,
                 [["Далее", "continue"]],
-                serverLink + newQuestion.link
+                "./documents" + newQuestion.link
               )
             );
           } else {
