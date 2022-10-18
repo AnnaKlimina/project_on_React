@@ -10,9 +10,7 @@ app.use(fileUpload({}));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
-// const port = process.env.PORT || 8080;
-
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 const uri = "mongodb+srv://anna:chatbot@chatbot.ne8nkkk.mongodb.net/chatbot?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
