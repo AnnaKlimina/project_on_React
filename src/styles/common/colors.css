@@ -1,0 +1,30 @@
+body {
+  --light-blue: #e6f7ff;
+  --blue: #61c7ee;
+  --dark-blue: #006999;
+
+  --font-color: #035a83;
+  --scrollbar: #429daa;
+  --scrollbar-thumb-light: #72c5d1;
+  --scrollbar-thumb-dark: #478891;
+  --message-bot-background: #e4f7ff;
+  --message-user-background: #71cde3;
+}
+
+._red {
+  --message-background: #ffe4e4;
+  --message-border: #990000;
+  --message-color: #830303;
+}
+
+._green {
+  --message-background: #c1ffbc;
+  --message-border: #00990f;
+  --message-color: #136318;
+}
+
+._yellow {
+  --option-background: #ff9800;
+  --option-background-hover: #ff980057;
+  --option-dark-color: #785521;
+}
