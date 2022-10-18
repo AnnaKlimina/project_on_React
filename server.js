@@ -26,8 +26,8 @@ let database;
       setInterval( ()=>{//setInterval
         const time = + new Date();
         const users = database.collection("users");
-        users.deleteMany({id:{$lt:time - 7200000}}) 
-      }, 7200000); //7200000
+        users.deleteMany({id:{$lt:time - 3600000}}) 
+      }, 3600000); //7200000
 });
   } catch (err) {
     return;
