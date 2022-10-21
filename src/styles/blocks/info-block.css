@@ -41,3 +41,11 @@
   opacity: 0.5;
   cursor: pointer;
 }
+
+
+@media(min-width: 760px){
+
+ .info-block__text{
+        margin: 0 20vw;
+  }
+}
