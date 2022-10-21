@@ -170,6 +170,9 @@ class Chat extends React.Component {
         let response = await fetch(serverLink + next);
         if (response.ok) {
           newQuestion = await response.json();
+          if (newQuestion.errorID) {
+            throw newQuestion;
+          }
           if (newQuestion.text === "") {
             messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
             return;
@@ -204,9 +207,19 @@ class Chat extends React.Component {
         );
       }
     } catch (e) {
-      console.log(e);
-      messages.push(new MessageObject("Нет подключения к серверу", "bot _red"));
-      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+      if (e.errorID) {
+        messages.push(
+          new MessageObject(
+            "Время сессии истекло. Пожалуйста, обновите страницу.",
+            "bot _red"
+          )
+        );
+      } else {
+        messages.push(
+          new MessageObject("Нет подключения к серверу", "bot _red")
+        );
+        messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+      }
     }
   }
 
@@ -223,6 +236,9 @@ class Chat extends React.Component {
     try {
       let response = await fetch(serverLink + next); // + "?" + new URLSearchParams({ answer: index, number: n }));
       if (response.ok) {
+        if (newQuestion.errorID) {
+          throw newQuestion;
+        }
         newQuestion = await response.json();
         if (newQuestion.text.length !== 0) {
           let options = newQuestion.options.map((option, index) => [
@@ -270,10 +286,19 @@ class Chat extends React.Component {
         messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
       }
     } catch (e) {
-      messages.push(
-        new MessageObject("Нет подключения к серверу", "bot  _red")
-      );
-      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+      if (e.errorID) {
+        messages.push(
+          new MessageObject(
+            "Время сессии истекло. Пожалуйста, обновите страницу.",
+            "bot _red"
+          )
+        );
+      } else {
+        messages.push(
+          new MessageObject("Нет подключения к серверу", "bot  _red")
+        );
+        messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+      }
     }
   }
 
