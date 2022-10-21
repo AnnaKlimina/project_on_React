@@ -9,5 +9,7 @@
 @import url("./blocks/option.css");
 @import url("./blocks/chatbot.css");
 @import url("./blocks/logo.css");
+@import url("./blocks/footer.css");
+@import url("./blocks/info-block.css");
 
 @import url("./common/modifier.css");

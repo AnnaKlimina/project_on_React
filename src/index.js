@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import "./styles/index.css";
+
 import logo from "./img/logo.png";
 import botIcon from "./img/bot.png";
+import close from "./img/close.png";
 
 const serverLink = "https://sam-zam-server.herokuapp.com";
 
@@ -91,8 +93,7 @@ class Message extends React.Component {
     return (
       <div className={"message-container " + this.props.position}>
         <div className="message">
-          {this.props.text}
-          <br />
+          <div dangerouslySetInnerHTML={{ __html: this.props.text }}></div>
           {link}
         </div>
         {element}
@@ -161,7 +162,7 @@ class Chat extends React.Component {
    * @param {string} link - ссылка (относительный путь) для выполнения запроса
    */
   async fetchSETest(messages, next) {
-    let newQuestion = "Извините, сервер временно недоступен";
+    let newQuestion = "Извините, данная опция временно недоступна";
     const id = this.state.id;
 
     try {
@@ -218,7 +219,7 @@ class Chat extends React.Component {
    */
   async fetchDocTest(messages, next) {
     const id = this.state.id;
-    let newQuestion = { text: "Извините, сервер временно недоступен" };
+    let newQuestion = { text: "Извините, данная опция временно недоступна" };
     try {
       let response = await fetch(serverLink + next); // + "?" + new URLSearchParams({ answer: index, number: n }));
       if (response.ok) {
@@ -248,14 +249,20 @@ class Chat extends React.Component {
               )
             );
           } else {
-            messages.push(
-              new MessageObject(
-                "Данная ветка пока в разработке",
-                "bot _red",
-                true,
-                [["Далее", "continue"]]
-              )
-            );
+            if (typeof newQuestion.link === "undefined") {
+              messages.push(
+                JSON.parse(JSON.stringify(this.state.continueBlock))
+              );
+            } else {
+              messages.push(
+                new MessageObject(
+                  "Данная ветка пока в разработке",
+                  "bot _red",
+                  true,
+                  [["Далее", "continue"]]
+                )
+              );
+            }
           }
         }
       } else {
@@ -270,8 +277,16 @@ class Chat extends React.Component {
     }
   }
 
+  /**
+   * Отправка и обработка GET-запроса серверу для получения вопросов и ответов по самозанятым
+   * @method
+   * @param {array} messages - массив сообщений в чате
+   * @param {any} next - ссылка (относительный путь) для выполнения запроса (строка) или объект, содержащий ответ на вопрос и данные
+   * для последующего отображения вопросов
+   */
+
   async fetchQuestions(messages, next) {
-    let newQuestion = { text: "Извините, сервер временно недоступен" };
+    let newQuestion = { text: "Извините, данная опция временно недоступна" };
     try {
       if (next.answer) {
         messages.push(
@@ -287,7 +302,7 @@ class Chat extends React.Component {
           ])
         );
       } else {
-        let response = await fetch(serverLink + next); // + "?" + new URLSearchParams({ answer: index, number: n }));
+        let response = await fetch(serverLink + next);
         if (response.ok) {
           newQuestion = await response.json();
           let options = newQuestion.options.map((option) => [
@@ -339,6 +354,11 @@ class Chat extends React.Component {
     }
   }
 
+  /**
+   * Декоратор функции. игнорирует повтореные вызовы функции-аргумента в ечение 3 секунд.
+   * @method
+   * @param {object} func - функция, которую нужно декорировать
+   */
   debounce(func) {
     let callFlag = true;
     return function (...args) {
@@ -402,12 +422,87 @@ class Chat extends React.Component {
  */
 class ChatBot extends React.Component {
   render() {
+    let id;
+    try {
+      (async () => {
+        id = +new Date();
+        let response = await fetch(serverLink + "/init?id=" + id);
+        if (response.ok) {
+        } else {
+          alert("error");
+          console.log("error");
+        }
+      })();
+    } catch (err) {
+      console.log("error");
+    }
     return (
       <div className="chatbot">
         <img className="chatbot__icon" src={botIcon} alt="chat-bot-icon" />
-        <Chat id={this.props.id} />
+        <Chat id={id} />
       </div>
     );
+  }
+}
+
+/**
+ * Компонент футера
+ * @component
+ */
+class Footer extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      appear: false,
+      text: "",
+    };
+  }
+  render() {
+    let textBlock = null;
+    if (this.state.appear) {
+      textBlock = (
+        <div className="info-block">
+          <div className="info-block__text">
+            <img className="info-block__close-icon" src={close} alt="close" />
+            {this.state.text}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <footer
+        className="footer"
+        onClick={(e) => {
+          this.handleClick(e);
+        }}
+      >
+        {textBlock}
+        <div className="footer__content">О нас</div>
+      </footer>
+    );
+  }
+
+  /**
+   * Обработчик события клика (обрабатывает появление и закрытие информационного окна)
+   * @method
+   * @param {object} e - объект события
+   */
+  async handleClick(e) {
+    if (!this.state.appear) {
+      let response = await fetch(serverLink + "/aboutUs");
+      let text = "";
+      if (response.ok) {
+        text = (await response.json()).text;
+      } else {
+        text = "Функция временно недоступна";
+      }
+      this.setState({ appear: true, text: text });
+    } else {
+      if (e.target.className !== "info-block__text") {
+        this.setState({ appear: false, text: "" });
+      }
+    }
   }
 }
 
@@ -419,23 +514,18 @@ class Page extends React.Component {
   render() {
     return (
       <div className="page">
-        <div className="logo">
-          <img className="logo__img" src={logo} alt="logo" />
-        </div>
-        <ChatBot id={this.props.id} />
+        <main className="page__main">
+          <div className="logo">
+            <img className="logo__img" src={logo} alt="logo" />
+          </div>
+          <ChatBot />
+        </main>
+        <Footer />
       </div>
     );
   }
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-let id;
-(async () => {
-  id = +new Date();
-  let response = await fetch(serverLink + "/init?id=" + id);
-  if (response.ok) {
-  } else {
-    console.log("error");
-  }
-})();
-root.render(<Page id={id} />);
+
+root.render(<Page />);

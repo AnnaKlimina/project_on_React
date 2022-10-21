@@ -1,0 +1,43 @@
+.info-block {
+}
+
+.info-block::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #565656b0;
+  z-index: 2;
+  opacity: 1;
+}
+
+.info-block__text {
+  position: absolute;
+  background: white;
+  border-radius: 10px;
+  border: 2px solid var(--dark-blue);
+  padding: 25px;
+  top: 150px;
+  font-weight: 100;
+  font-size: 14px;
+  text-align: justify;
+  margin: 0 20px;
+  z-index: 3;
+  left: 0;
+  white-space: pre-wrap;
+}
+
+.info-block__close-icon {
+  position: absolute;
+  width: 15px;
+  top: 8px;
+  right: 8px;
+}
+
+.info-block__close-icon:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}

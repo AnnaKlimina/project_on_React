@@ -30,10 +30,19 @@
 import ReactDOM from "react-dom/client";
 
 import "./styles/index.css";
+
 import logo from "./img/logo.png";
 import botIcon from "./img/bot.png";
+import close from "./img/close.png";
 
-const serverLink = "http://localhost:8080";
+const serverLink = "https://sam-zam-server.herokuapp.com";
+
+const standart = new Set([
+  "Назад",
+  "Предыдущие вопросы",
+  "Вернуться на главный экран",
+  "Ещё вопросы",
+]);
 
 /**
  * Конструктор объекта сообщения
@@ -56,19 +65,6 @@ class MessageObject {
   }
 }
 
-const startBlock = new MessageObject(
-  "Добро пожаловать! Давайте я покажу вам, с чем могу помочь:",
-  "bot",
-  true,
-  [
-    ["Пройти тест на самозанятость", "/selfTest/yes"],
-    ["Получить комплект докуметов", "/documents/doc"],
-    ["Узнать подробнее про самозанятых", 5],
-  ]
-);
-const continueBlock = JSON.parse(JSON.stringify(startBlock));
-continueBlock.text = "Давайте я покажу вам, с чем могу помочь:";
-
 /**
  * Компонент опции (вариант ответа/вопроса, который предлагает бот)
  * @component
@@ -77,7 +73,7 @@ class Option extends React.Component {
   render() {
     return (
       &lt;div
-        className="option"
+        className={"option" + (standart.has(this.props.text) ? " _yellow" : "")}
         onClick={(e) => {
           this.props.onClick(e);
         }}
@@ -100,16 +96,12 @@ class Message extends React.Component {
     if (options.appear) {
       element = (
         &lt;div className="option-container">
-          {options.array.map((text, index, array) => (
+          {options.array.map((text, index) => (
             &lt;Option
               key={index}
               text={text[0]}
               onClick={(e) => {
-                this.props.onClick(
-                  e,
-                  text[1],
-                  index === array.length - 1 ? -1 : index
-                );
+                this.props.onClick(e, text[1], index);
               }}
             />
           ))}
@@ -120,7 +112,7 @@ class Message extends React.Component {
     let link = null;
     if (this.props.link) {
       link = (
-        &lt;a href={this.props.link} className="message__link">
+        &lt;a href={this.props.link} className="message__link" download>
           Скачать
         &lt;/a>
       );
@@ -129,8 +121,7 @@ class Message extends React.Component {
     return (
       &lt;div className={"message-container " + this.props.position}>
         &lt;div className="message">
-          {this.props.text}
-          &lt;br />
+          &lt;div dangerouslySetInnerHTML={{ __html: this.props.text }}>&lt;/div>
           {link}
         &lt;/div>
         {element}
@@ -150,13 +141,31 @@ class Chat extends React.Component {
    */
   constructor(props) {
     super(props);
+    const startBlock = new MessageObject(
+      "Добро пожаловать! Давайте я покажу вам, с чем могу помочь:",
+      "bot",
+      true,
+      [
+        ["Пройти тест на самозанятость", "/selfTest?id=" + props.id],
+        ["Получить комплект докуметов", "/documents?id=" + props.id],
+        ["Узнать подробнее про самозанятых", "/questions"],
+      ]
+    );
+
+    const continueBlock = JSON.parse(JSON.stringify(startBlock));
+    continueBlock.text = "Что Вас интересует?";
+
     this.state = {
       messages: [JSON.parse(JSON.stringify(startBlock))],
+      id: props.id,
+      continueBlock: continueBlock,
     };
   }
 
   render() {
     const messages = this.state.messages;
+
+    let handler = this.debounce(this.handleClick.bind(this));
 
     return (
       &lt;div className="chat-wrapper">
@@ -167,9 +176,7 @@ class Chat extends React.Component {
             position={m.sender}
             options={m.options}
             link={m.link}
-            onClick={(e, link, index) => {
-              this.handleClick(e, link, index);
-            }}
+            onClick={handler}
           />
         ))}
       &lt;/div>
@@ -182,39 +189,52 @@ class Chat extends React.Component {
    * @param {array} messages - массив сообщений в чате
    * @param {string} link - ссылка (относительный путь) для выполнения запроса
    */
-  async fetchSETest(messages, link) {
-    let newQuestion = "Извините, сервер временно недоступен";
+  async fetchSETest(messages, next) {
+    let newQuestion = "Извините, данная опция временно недоступна";
+    const id = this.state.id;
 
     try {
-      let response = await fetch(serverLink + link);
-
-      if (response.ok) {
-        newQuestion = await response.json();
-        messages.push(
-          new MessageObject(
-            newQuestion.text,
-            "bot",
-            newQuestion.question,
-            newQuestion.question
-              ? [
-                  ["Да", "/selfTest/yes"],
-                  ["Нет", "/selfTest/no"],
-                  ["Назад", "/selfTest/reject"],
-                ]
-              : []
-          )
-        );
-
-        if (!newQuestion.question) {
-          messages.push(JSON.parse(JSON.stringify(continueBlock)));
+      if (typeof next === "string") {
+        let response = await fetch(serverLink + next);
+        if (response.ok) {
+          newQuestion = await response.json();
+          if (newQuestion.text === "") {
+            messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+            return;
+          }
+          let yes = isFinite(newQuestion.next[0])
+            ? "/selfTest/next?" +
+              new URLSearchParams({ id: id, number: newQuestion.next[0] })
+            : newQuestion.next[0];
+          let no = isFinite(newQuestion.next[1])
+            ? "/selfTest/next?" +
+              new URLSearchParams({ id: id, number: newQuestion.next[1] })
+            : newQuestion.next[1];
+          let prev = "/selfTest/prev?" + new URLSearchParams({ id: id });
+          messages.push(
+            new MessageObject(newQuestion.text, "bot", true, [
+              ["Да", yes],
+              ["Нет", no],
+              ["Назад", prev],
+            ])
+          );
+        } else {
+          messages.push(new MessageObject(newQuestion, "bot  _red"));
+          messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
         }
       } else {
-        messages.push(new MessageObject(newQuestion, "bot"));
-        messages.push(JSON.parse(JSON.stringify(continueBlock)));
+        let style =
+          next.result || next.result === undefined ? "_green" : "_red";
+        messages.push(
+          new MessageObject(next.answer, "bot " + style, true, [
+            ["Далее", "continue"],
+          ])
+        );
       }
     } catch (e) {
-      messages.push(new MessageObject("Нет подключения к серверу", "bot"));
-      messages.push(JSON.parse(JSON.stringify(continueBlock)));
+      console.log(e);
+      messages.push(new MessageObject("Нет подключения к серверу", "bot _red"));
+      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
     }
   }
 
@@ -225,49 +245,161 @@ class Chat extends React.Component {
    * @param {string} link - ссылка (относительный путь) для выполнения запроса
    * @param {int} index - индекс варианта ответа (если равен -1, то пользователь возвращается на стартовый блок))
    */
-  async fetchDocTest(messages, link, index) {
-    if (index === -1) {
-      messages.push(JSON.parse(JSON.stringify(continueBlock)));
-      return;
-    }
-
-    let newQuestion = "Извините, сервер временно недоступен";
+  async fetchDocTest(messages, next) {
+    const id = this.state.id;
+    let newQuestion = { text: "Извините, данная опция временно недоступна" };
     try {
-      let response = await fetch(
-        serverLink + link + "?" + new URLSearchParams({ bodyNumber: index })
-      );
+      let response = await fetch(serverLink + next); // + "?" + new URLSearchParams({ answer: index, number: n }));
       if (response.ok) {
         newQuestion = await response.json();
-        if (newQuestion.text !== "/download") {
-          let options = newQuestion.answers.map((text) => [
-            text,
-            "/documents/doc",
+        if (newQuestion.text.length !== 0) {
+          let options = newQuestion.options.map((option, index) => [
+            option[0],
+            "/documents/next?" +
+              new URLSearchParams({ id: id, answer: index, number: option[1] }),
+          ]);
+          options.push([
+            "Назад",
+            "/documents/prev?" + new URLSearchParams({ id: id }),
           ]);
           messages.push(
             new MessageObject(newQuestion.text, "bot", true, options)
           );
         } else {
-          messages.push(
-            new MessageObject(
-              "Ваш договор:",
-              "bot",
-              false,
-              [],
-              "http://localhost:8080/download"
-            )
-          );
-          messages.push(JSON.parse(JSON.stringify(continueBlock)));
+          if (newQuestion.link) {
+            messages.push(
+              new MessageObject(
+                "Ваш договор:",
+                "bot _green",
+                true,
+                [["Далее", "continue"]],
+                "./documents" + newQuestion.link
+              )
+            );
+          } else {
+            if (typeof newQuestion.link === "undefined") {
+              messages.push(
+                JSON.parse(JSON.stringify(this.state.continueBlock))
+              );
+            } else {
+              messages.push(
+                new MessageObject(
+                  "Данная ветка пока в разработке",
+                  "bot _red",
+                  true,
+                  [["Далее", "continue"]]
+                )
+              );
+            }
+          }
         }
       } else {
-        messages.push(new MessageObject(newQuestion, "bot"));
-        messages.push(JSON.parse(JSON.stringify(continueBlock)));
+        messages.push(new MessageObject(newQuestion.text, "bot  _red"));
+        messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
       }
     } catch (e) {
-      messages.push(new MessageObject("Нет подключения к серверу", "bot"));
-      messages.push(JSON.parse(JSON.stringify(continueBlock)));
+      messages.push(
+        new MessageObject("Нет подключения к серверу", "bot  _red")
+      );
+      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
     }
   }
 
+  /**
+   * Отправка и обработка GET-запроса серверу для получения вопросов и ответов по самозанятым
+   * @method
+   * @param {array} messages - массив сообщений в чате
+   * @param {any} next - ссылка (относительный путь) для выполнения запроса (строка) или объект, содержащий ответ на вопрос и данные
+   * для последующего отображения вопросов
+   */
+
+  async fetchQuestions(messages, next) {
+    let newQuestion = { text: "Извините, данная опция временно недоступна" };
+    try {
+      if (next.answer) {
+        messages.push(
+          new MessageObject(next.answer, "bot _green", true, [
+            [
+              "Далее",
+              "/questions/next?" +
+                new URLSearchParams({
+                  category: next.category,
+                  part: next.part,
+                }),
+            ],
+          ])
+        );
+      } else {
+        let response = await fetch(serverLink + next);
+        if (response.ok) {
+          newQuestion = await response.json();
+          let options = newQuestion.options.map((option) => [
+            option[0],
+            isFinite(option[1])
+              ? "/questions/next?" +
+                new URLSearchParams({
+                  category: option[0],
+                  part: 0,
+                })
+              : {
+                  category: newQuestion.text,
+                  part: 0,
+                  answer: option[1],
+                },
+          ]);
+          if (newQuestion.more) {
+            options.push([
+              "Ещё вопросы",
+              "/questions/next?" +
+                new URLSearchParams({
+                  category: newQuestion.text,
+                  part: newQuestion.part,
+                }),
+            ]);
+          }
+          if (newQuestion.less) {
+            options.push([
+              "Предыдущие вопросы",
+              "/questions/prev?" +
+                new URLSearchParams({
+                  category: newQuestion.text,
+                  part: newQuestion.part,
+                }),
+            ]);
+          }
+          options.push(["Вернуться на главный экран", "continue"]);
+          messages.push(
+            new MessageObject(newQuestion.text, "bot", true, options)
+          );
+        } else {
+          messages.push(new MessageObject(newQuestion.text, "bot _red"));
+          messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+        }
+      }
+    } catch (e) {
+      messages.push(new MessageObject("Нет подключения к серверу", "bot _red"));
+      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+    }
+  }
+
+  /**
+   * Декоратор функции. игнорирует повтореные вызовы функции-аргумента в ечение 3 секунд.
+   * @method
+   * @param {object} func - функция, которую нужно декорировать
+   */
+  debounce(func) {
+    let callFlag = true;
+    return function (...args) {
+      if (!callFlag) {
+        return;
+      }
+      func(...args);
+      callFlag = false;
+      setTimeout(() => {
+        callFlag = true;
+      }, 3000);
+    };
+  }
   /**
    * Обработчик события клика (используется при клике на опции(варианты ответов/вопросов, которые предлагает чат-бот))
    * @method
@@ -284,10 +416,22 @@ class Chat extends React.Component {
     messageOptions.array = [];
 
     messages.push(new MessageObject(e.target.textContent, "user"));
-
-    if (link.includes("selfTest")) {
+    if (
+      (typeof link === "object" &amp;&amp; typeof link.result !== "undefined") ||
+      (typeof link === "string" &amp;&amp; link.includes("selfTest"))
+    ) {
       await this.fetchSETest(messages, link);
-    } else {
+    }
+    if (link === "continue") {
+      messages.push(JSON.parse(JSON.stringify(this.state.continueBlock)));
+    }
+    if (
+      (typeof link === "string" &amp;&amp; link.includes("questions")) ||
+      (typeof link === "object" &amp;&amp; link.category)
+    ) {
+      await this.fetchQuestions(messages, link);
+    }
+    if (typeof link === "string" &amp;&amp; link.includes("documents")) {
       await this.fetchDocTest(messages, link, index);
     }
 
@@ -306,12 +450,87 @@ class Chat extends React.Component {
  */
 class ChatBot extends React.Component {
   render() {
+    let id;
+    try {
+      (async () => {
+        id = +new Date();
+        let response = await fetch(serverLink + "/init?id=" + id);
+        if (response.ok) {
+        } else {
+          alert("error");
+          console.log("error");
+        }
+      })();
+    } catch (err) {
+      console.log("error");
+    }
     return (
       &lt;div className="chatbot">
         &lt;img className="chatbot__icon" src={botIcon} alt="chat-bot-icon" />
-        &lt;Chat />
+        &lt;Chat id={id} />
       &lt;/div>
     );
+  }
+}
+
+/**
+ * Компонент футера
+ * @component
+ */
+class Footer extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      appear: false,
+      text: "",
+    };
+  }
+  render() {
+    let textBlock = null;
+    if (this.state.appear) {
+      textBlock = (
+        &lt;div className="info-block">
+          &lt;div className="info-block__text">
+            &lt;img className="info-block__close-icon" src={close} alt="close" />
+            {this.state.text}
+          &lt;/div>
+        &lt;/div>
+      );
+    }
+
+    return (
+      &lt;footer
+        className="footer"
+        onClick={(e) => {
+          this.handleClick(e);
+        }}
+      >
+        {textBlock}
+        &lt;div className="footer__content">О нас&lt;/div>
+      &lt;/footer>
+    );
+  }
+
+  /**
+   * Обработчик события клика (обрабатывает появление и закрытие информационного окна)
+   * @method
+   * @param {object} e - объект события
+   */
+  async handleClick(e) {
+    if (!this.state.appear) {
+      let response = await fetch(serverLink + "/aboutUs");
+      let text = "";
+      if (response.ok) {
+        text = (await response.json()).text;
+      } else {
+        text = "Функция временно недоступна";
+      }
+      this.setState({ appear: true, text: text });
+    } else {
+      if (e.target.className !== "info-block__text") {
+        this.setState({ appear: false, text: "" });
+      }
+    }
   }
 }
 
@@ -323,16 +542,20 @@ class Page extends React.Component {
   render() {
     return (
       &lt;div className="page">
-        &lt;div className="logo">
-          &lt;img className="logo__img" src={logo} alt="logo" />
-        &lt;/div>
-        &lt;ChatBot />
+        &lt;main className="page__main">
+          &lt;div className="logo">
+            &lt;img className="logo__img" src={logo} alt="logo" />
+          &lt;/div>
+          &lt;ChatBot />
+        &lt;/main>
+        &lt;Footer />
       &lt;/div>
     );
   }
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(&lt;Page />);
 </code></pre>
         </article>
@@ -344,13 +567,13 @@ root.render(&lt;Page />);
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Chat.html">Chat</a></li><li><a href="ChatBot.html">ChatBot</a></li><li><a href="Message.html">Message</a></li><li><a href="MessageObject.html">MessageObject</a></li><li><a href="Option.html">Option</a></li><li><a href="Page.html">Page</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Chat.html">Chat</a></li><li><a href="ChatBot.html">ChatBot</a></li><li><a href="Footer.html">Footer</a></li><li><a href="Message.html">Message</a></li><li><a href="MessageObject.html">MessageObject</a></li><li><a href="Option.html">Option</a></li><li><a href="Page.html">Page</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a> on Thu Oct 13 2022 19:28:34 GMT+0300 (Москва, стандартное время)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a> on Fri Oct 21 2022 12:34:47 GMT+0300 (Москва, стандартное время)
 </footer>
 
 <script> prettyPrint(); </script>

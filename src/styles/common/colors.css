@@ -9,6 +9,8 @@ body {
   --scrollbar-thumb-dark: #478891;
   --message-bot-background: #e4f7ff;
   --message-user-background: #71cde3;
+  --button-background: #61d3ff;
+  --button-font-color: #003a55;
 }
 
 ._red {
