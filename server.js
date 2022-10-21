@@ -26,7 +26,7 @@ let database;
       setInterval( ()=>{//setInterval
         const time = + new Date();
         const users = database.collection("users");
-        users.deleteMany({id:{$lt:time - 3600000}}) 
+        users.deleteMany({id:{$lt:time -  5*3600000}}) 
       }, 3600000); //7200000
 });
   } catch (err) {
@@ -82,7 +82,7 @@ app.get("/selfTest", async function(request, response){
     let question = (await testSE.find({ number: 0 }).toArray())[0];
     response.send(JSON.stringify(question));
   } catch(err){
-    console.log(err)
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
@@ -103,7 +103,7 @@ app.get("/selfTest/next", async function(request, response){
     response.send(JSON.stringify(question));
 
   } catch(err){
-    console.log(err)
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
@@ -128,7 +128,7 @@ app.get("/selfTest/prev", async function(request, response){
       response.send(JSON.stringify(question));
     }
   } catch(err){
-    console.log(err);
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
@@ -149,7 +149,7 @@ app.get("/documents", async function(request,response){
     response.send(JSON.stringify(question));
 
   } catch(err){
-    console.log(err)
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
@@ -195,7 +195,7 @@ app.get("/documents/next", async function(request,response){
     }
 
   } catch(err){
-    console.log(err);
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
@@ -220,7 +220,7 @@ app.get("/documents/prev", async function(request, response){
       response.send(JSON.stringify(question));
   }
  } catch(err){
-    console.log(err);
+    response.send(JSON.stringify({errorID: true}));
   }
 });
 
