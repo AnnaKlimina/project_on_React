@@ -308,6 +308,16 @@ app.get("/questions/prev", async function(request,response){
   }
 });
 
+app.get("/aboutUs", async function (request, response) {
+  try {
+    const aboutUs = await database.collection("aboutUs");
+    let result = (await aboutUs.find({}).toArray())[0];
+    response.send(JSON.stringify(result));
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 
 app.get("/closeDB", async function (request, response) {
   try {
