@@ -1,6 +1,13 @@
 {
-  "name": "mongoapp",
+  "name": "sam-zam-server",
   "version": "1.0.0",
+    "apidoc": {
+      "name":"Проект 'СамЗам'",
+      "description": "Документация сервера 'СамЗам'",
+    "title": "Пользовательское название браузера Apidoc",
+ 	 "url" : "",
+   "src": ""
+  },
   "dependencies": {
     "body-parser": "^1.19.2",
     "cors": "^2.8.5",

@@ -35,7 +35,13 @@ let database;
 })();
 
 
-
+/**
+ * @api {get} /init Инициализация пользователя
+ * @apiGroup Getting started with chatbot
+ * @apiDescription инициализация пользователя в начале работы с чат-ботом. Пользователь получает свой ID
+ * @apiName Init
+ * @apiSuccess {Number} id ID пользователя
+ */
 app.get("/init", async function (request, response) {
   try {
     let insertUser = {
@@ -66,6 +72,18 @@ app.get("/init", async function (request, response) {
   }
 });
 
+/**
+ * @api {get} /selfTest?id=:id Запуск теста
+ * @apiParam {Number} id ID пользователя
+ * @apiGroup Self-employment test
+ * @apiDescription Запуск теста на самозанятость
+ * @apiName selfTest
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} next массив из двух значений: первое соответствует варианту ответа "Да", второе "Нет". Если значение - число, то интерфейс должен обратитьзя за следующим вопросом. Если значение - объект с полями "answer"(текст ответа) и "result"(true/false - результат теста "может/не может стать СЗ"), то это результат теста.
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
+
 app.get("/selfTest", async function(request, response){
   try{
     let id = Number(request.query.id);
@@ -86,6 +104,18 @@ app.get("/selfTest", async function(request, response){
   }
 });
 
+/**
+ * @api {get} /selfTest/next?id=:id&number=:number Переход к следующему вопросу
+ * @apiParam {Number} id ID пользователя
+ * @apiParam {Number} number Номер вопроса
+ * @apiGroup Self-employment test
+ * @apiDescription Переход к следующему вопросу теста на самозанятость
+ * @apiName selfTestNext
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} next массив из двух значений: первое соответствует варианту ответа "Да", второе "Нет". Если значение - число, то интерфейс должен обратитьзя за следующим вопросом. Если значение - объект с полями "answer"(текст ответа) и "result"(true/false - результат теста "может/не может стать СЗ"), то это результат теста.
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
 app.get("/selfTest/next", async function(request, response){
   try{
     let id = Number(request.query.id);
@@ -107,7 +137,18 @@ app.get("/selfTest/next", async function(request, response){
   }
 });
 
-
+/**
+ * @api {get} /selfTest/prev?id=:id Переход к предыдущему вопросу
+ * @apiParam {Number} id ID пользователя
+ * @apiParam {Number} number Номер вопроса
+ * @apiGroup Self-employment test
+ * @apiDescription Переход к предыдущему вопросу теста на самозанятость
+ * @apiName selfTestPrev
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} next массив из двух значений: первое соответствует варианту ответа "Да", второе "Нет". Если значение - число, то интерфейс должен обратитьзя за следующим вопросом. Если значение - объект с полями "answer"(текст ответа) и "result"(true/false - результат теста "может/не может стать СЗ"), то это результат теста.
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
 app.get("/selfTest/prev", async function(request, response){
   try{
     let id = Number(request.query.id);
@@ -132,6 +173,18 @@ app.get("/selfTest/prev", async function(request, response){
   }
 });
 
+
+/**
+ * @api {get} /documents?id=:id Запуск теста
+ * @apiParam {Number} id ID пользователя
+ * @apiGroup Document selection test
+ * @apiDescription Запуск теста на подбор комплекта документов
+ * @apiName documents
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} options Массив вариантов ответов. Элемент массива - массив из двух значений. Первое - текст варианта ответа (String), второе - номер следующего вопроса (Number).
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
 app.get("/documents", async function(request,response){
   try{
     let id = Number(request.query.id);
@@ -153,6 +206,20 @@ app.get("/documents", async function(request,response){
   }
 });
 
+/**
+ * @api {get} /documents/next?id=:id&number=:number&answer=:answer Переход к следующему вопросу
+ * @apiParam {Number} id ID пользователя
+ * @apiParam {Number} number номер следующего вопроса
+ * @apiParam {Number} answer номер ответа, который выбрал пользователь в предыдущем вопросе
+ * @apiGroup Document selection test
+ * @apiDescription Переход к следующему вопросу теста на подбор комплекта документов
+ * @apiName documentsNext
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} [options] Возвращается, если в тесте еще есть вопросы: массив вариантов ответов. Элемент массива - массив из двух значений. Первое - текст варианта ответа (String), второе - номер следующего вопроса (Number).
+ * @apiSuccess {String} [link] Возвращается, если есть результат теста: ссылка на скачивание документа. Если параметр равен null, то текущая ветка договоров пока в разработке. 
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
 app.get("/documents/next", async function(request,response){
   try{
     let id = Number(request.query.id);
@@ -199,6 +266,17 @@ app.get("/documents/next", async function(request,response){
   }
 });
 
+/**
+ * @api {get} /documents/prev?id=:id Переход к предыдущему вопросу
+ * @apiParam {Number} id ID пользователя
+ * @apiGroup Document selection test
+ * @apiDescription Переход к предыдущему вопросу теста на подбор комплекта документов
+ * @apiName documentsPrev
+ * @apiSuccess {Number} number номер вопроса
+ * @apiSuccess {String} text текст вопроса
+ * @apiSuccess {Array} options Массив вариантов ответов. Элемент массива - массив из двух значений. Первое - текст варианта ответа (String), второе - номер следующего вопроса (Number).
+ * @apiError {Boolean} errorID возвращает true, если возникла ошибка поиска ID пользователя в базе.
+ */
 app.get("/documents/prev", async function(request, response){
   try{
     let id = Number(request.query.id);
@@ -224,6 +302,14 @@ app.get("/documents/prev", async function(request, response){
   }
 });
 
+/**
+ * @api {get} /questions Получение категорий вопросов
+ * @apiGroup Questions
+ * @apiDescription Получение категорий вопросов о самозанятых
+ * @apiName questions
+ * @apiSuccess {String} text Текст вводного сообщения чат-бота
+ * @apiSuccess {Array} options Массив вариантов категорий. Элемент массива - массив из двух значений. Первое - текст варианта (String), второе - номер (Number).
+ */
 app.get("/questions", async function(request, response){
   try{
 
@@ -240,6 +326,19 @@ app.get("/questions", async function(request, response){
   }
 });
 
+/**
+ * @api {get} /questions/next?category=:category&part=:part Получение вопросов конкретной категории
+ * @apiParam {String} category Название категории
+ * @apiParam {Number} part=0 Следующая часть вопросов (если доступных вопросов меньше 5, то по умолчанию part=0)
+ * @apiGroup Questions
+ * @apiDescription Получение вопросов о самозанятых
+ * @apiName questionsNext
+ * @apiSuccess {String} text Категория
+ * @apiSuccess {Array} options Массив вариантов вопросов. Элемент массива - массив из двух значений. Первое - текст вопроса (String), второе - текст ответа на этот вопрос(String).
+ * @apiSuccess {Number} part часть всего множества вопросов
+ * @apiSuccess {Boolean} more Если true, то можно получить следующую часть вопросов по этому же запросу с соответствующими параметрами. 
+ * @apiSuccess {Boolean} less Если true, то можно получить предыдущую часть вопросов из всего множества вопросов данной категории (по этому же запросу с соответствующими параметрами)
+ */
 app.get("/questions/next", async function(request,response){
   try {
     let category = request.query.category;
@@ -274,6 +373,19 @@ app.get("/questions/next", async function(request,response){
   }
 });
 
+/**
+ * @api {get} /questions/prev?category=:category&part=:part Получение предыдущих вопросов 
+ * @apiParam {String} category Название категории
+ * @apiParam {Number} part=0 Следующая часть вопросов (если доступных вопросов меньше 5, то по умолчанию part=0)
+ * @apiGroup Questions
+ * @apiDescription Получение предыдущих вопросов о самозанятых. Запрос можно использовать, если вопросов по данной категории не меньше 5.
+ * @apiName questionsPrev
+ * @apiSuccess {String} text Категория
+ * @apiSuccess {Array} options Массив вариантов вопросов. Элемент массива - массив из двух значений. Первое - текст вопроса (String), второе - текст ответа на этот вопрос(String).
+ * @apiSuccess {Number} part часть всего множества вопросов
+ * @apiSuccess {Boolean} more Если true, то можно получить следующую часть вопросов по этому же запросу с соответствующими параметрами. 
+ * @apiSuccess {Boolean} less Если true, то можно получить предыдущую часть вопросов из всего множества вопросов данной категории (по этому же запросу с соответствующими параметрами)
+ */
 app.get("/questions/prev", async function(request,response){
   try {
     let category = request.query.category;
@@ -308,21 +420,18 @@ app.get("/questions/prev", async function(request,response){
   }
 });
 
+/**
+ * @api {get} /aboutUs Информация "О нас"
+ * @apiGroup "About Us" information
+ * @apiDescription Получение информации "О нас" для оповещения пользователя
+ * @apiName aboutUs
+ * @apiSuccess {String} text Текст сообщения "О нас"
+ */
 app.get("/aboutUs", async function (request, response) {
   try {
     const aboutUs = await database.collection("aboutUs");
     let result = (await aboutUs.find({}).toArray())[0];
     response.send(JSON.stringify(result));
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-
-app.get("/closeDB", async function (request, response) {
-  try {
-    await client.close();
-    console.log("end");
   } catch (err) {
     console.log(err);
   }
