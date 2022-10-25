@@ -16,8 +16,6 @@
 
 `npm start`
 
-Интерфейс обращается к серверу по ссылке https://sam-zam-server.herokuapp.com. 
-
 ## Платформа
  
  Сервер выложен на платформе  heroku: https://sam-zam-server.herokuapp.com
